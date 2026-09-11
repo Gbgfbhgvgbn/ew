@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" class="h-full bg-black text-green-500 select-none">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CYBER_MATRIX // ELIZA ADVANCED NLP v9.0</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;600;700&family=VT323&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            background-color: #020702;
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .vt323 { font-family: 'VT323', monospace; }
+
+        /* CRT Glow Effects */
+        .crt-glow { text-shadow: 0 0 5px rgba(0, 255, 102, 0.8), 0 0 12px rgba(0, 255, 102, 0.4); }
+        .crt-glow-cyan { text-shadow: 0 0 5px rgba(0, 240, 255, 0.9), 0 0 15px rgba(0, 240, 255, 0.6); }
+        .crt-glow-red { text-shadow: 0 0 5px rgba(255, 50, 50, 0.9), 0 0 15px rgba(255, 50, 50, 0.6); }
+
+        /* Scanline Overlay */
+        .scanlines {
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 3px, 6px 100%;
+            pointer-events: none;
+        }
+
+        /* Screen Shake / Boom Explosion Effect */
+        @keyframes matrix-boom-shake {
+            0% { transform: translate(0, 0) scale(1); filter: brightness(4) invert(100%); }
+            10% { transform: translate(-10px, 10px) scale(1.03); filter: brightness(2) hue-rotate(90deg); }
+            20% { transform: translate(10px, -10px) scale(0.98); filter: brightness(3); }
+            30% { transform: translate(-12px, -5px) scale(1.02); }
+            50% { transform: translate(5px, 5px) scale(1.01); filter: brightness(1.5); }
+            100% { transform: translate(0, 0) scale(1); filter: brightness(1); }
+        }
+
+        .boom-effect {
+            animation: matrix-boom-shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* Glitch animations */
+        @keyframes matrix-glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-4px, 2px) skew(2deg); filter: hue-rotate(90deg); }
+            40% { transform: translate(4px, -2px) skew(-2deg); filter: invert(30%); }
+            60% { transform: translate(-2px, 1px); }
+            100% { transform: translate(0); }
+        }
+        .glitching { animation: matrix-glitch 0.12s infinite; }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #031203; }
+        ::-webkit-scrollbar-thumb { background: #00ff66; border-radius: 2px; }
+    </style>
+</head>
+
+<body class="h-[100dvh] w-screen flex flex-col relative text-sm select-text overflow-hidden bg-black text-green-500">
+
+    <div id="boot-overlay" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-lg flex flex-col items-center justify-center p-4 text-center font-mono select-none transition-opacity duration-500">
+        <canvas id="boot-matrix-canvas" class="absolute inset-0 z-0 opacity-60 pointer-events-none"></canvas>
+        <div class="relative z-10 max-w-lg w-full bg-black/90 border border-green-500/60 rounded-xl p-5 shadow-[0_0_35px_rgba(0,255,102,0.35)] space-y-4">
+            <div class="flex items-center justify-center gap-3">
+                <span class="w-3 h-3 rounded-full bg-green-500 animate-ping"></span>
+                <h1 class="vt323 text-2xl md:text-4xl text-green-400 crt-glow font-bold tracking-widest">
+                    SYSTEM BOOT // ELIZA v9.0
+                </h1>
+            </div>
+            <p class="text-xs md:text-sm text-green-300/90 font-semibold animate-pulse">
+                ⚡ PURE ENGLISH ADVANCED SYNTAX NLP & COGNITION ONLINE
+            </p>
+            <div class="w-full h-2 bg-green-950 rounded border border-green-500/40 overflow-hidden">
+                <div id="boot-progress-bar" class="h-full bg-green-400 transition-all duration-100" style="width: 0%;"></div>
+            </div>
+            <div id="boot-log-box" class="h-28 bg-black/95 border border-green-500/30 rounded p-2 text-left font-mono text-[11px] text-green-400 overflow-y-auto space-y-1"></div>
+            <button onclick="fastSkipBoot()" class="w-full py-3 bg-green-950 hover:bg-green-800 text-green-300 border border-green-500/50 text-xs font-bold rounded-lg transition min-h-[44px]">
+                [ FAST ENTER MAINFRAME ]
+            </button>
+        </div>
+    </div>
+
+    <canvas id="matrix-canvas" class="fixed inset-0 z-0 opacity-35 pointer-events-none"></canvas>
+
+    <!-- Scanline CRT Effect -->
+    <div class="scanlines fixed inset-0 z-10"></div>
+
+    <!-- Main Application UI Shell with Safe Mobile Padding -->
+    <div id="main-container" class="relative z-20 h-[100dvh] w-full flex flex-col p-2 md:p-3 gap-2 md:gap-3 max-w-[1800px] mx-auto overflow-hidden pb-24 md:pb-3">
+
+        <header class="flex items-center justify-between bg-black/90 border border-green-500/40 rounded-lg p-2 md:px-4 backdrop-blur-md shrink-0 shadow-[0_0_15px_rgba(0,255,102,0.12)]">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-green-500 animate-ping"></span>
+                <h1 class="vt323 text-lg md:text-2xl text-green-400 crt-glow font-bold tracking-wider truncate">
+                    ELIZA_NLP_MAINFRAME_v9.0
+                </h1>
+            </div>
+
+            <!-- Quick Action Controls -->
+            <div class="flex items-center gap-1.5 md:gap-2 text-xs font-mono">
+                <button onclick="playBoomSound(); triggerHackerAction('boom')" class="px-2.5 py-1.5 bg-green-950 hover:bg-green-800 text-green-300 rounded-md border border-green-500/50 text-[11px] font-bold transition min-h-[36px] flex items-center gap-1">
+                    💥 BOOM
+                </button>
+                <button id="tts-toggle-btn" onclick="toggleTTS()" class="px-2 py-1.5 bg-green-950 hover:bg-green-800 text-green-300 rounded-md border border-green-500/50 text-[11px] font-bold transition min-h-[36px]">
+                    🗣️ VOICE [OFF]
+                </button>
+                <button onclick="triggerReboot()" class="px-2 py-1.5 bg-green-950 hover:bg-green-800 text-green-300 rounded-md border border-green-500/50 text-[11px] font-bold transition min-h-[36px]">
+                    ↻
+                </button>
+            </div>
+        </header>
+
+        <nav id="mobile-tabs" class="grid grid-cols-4 gap-1 lg:hidden bg-black/90 border border-green-500/40 p-1 rounded-lg shrink-0 text-center font-mono text-[11px] font-bold">
+            <button id="mtab-chat" onclick="switchMobileTab('chat')" class="py-2 rounded bg-green-500 text-black font-bold transition">
+                💬 CHAT
+            </button>
+            <button id="mtab-personas" onclick="switchMobileTab('personas')" class="py-2 rounded bg-green-950/60 text-green-300 transition">
+                🤖 PERSONAS
+            </button>
+            <button id="mtab-actions" onclick="switchMobileTab('actions')" class="py-2 rounded bg-green-950/60 text-green-300 transition">
+                ⚡ ACTIONS
+            </button>
+            <button id="mtab-stats" onclick="switchMobileTab('stats')" class="py-2 rounded bg-green-950/60 text-green-300 transition">
+                📊 STATS
+            </button>
+        </nav>
+
+        <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2 md:gap-3 min-h-0 overflow-hidden">
+
+            <!-- LEFT PANEL: Personas & Cyber Actions -->
+            <aside id="panel-left" class="lg:col-span-4 flex-col gap-2 md:gap-3 min-h-0 hidden lg:flex overflow-y-auto">
+                <div class="bg-black/85 border border-green-500/40 rounded-lg p-3 flex flex-col gap-2 shadow-[0_0_10px_rgba(0,255,102,0.08)]">
+                    <h2 class="vt323 text-lg text-green-400 border-b border-green-500/30 pb-1 crt-glow flex justify-between items-center">
+                        <span>SELECT ELIZA PERSONA</span>
+                        <span class="text-xs text-green-500 font-mono">[8 MODES]</span>
+                    </h2>
+                    <div class="grid grid-cols-1 gap-1.5 mt-1 max-h-[280px] overflow-y-auto pr-1" id="persona-buttons-container"></div>
+                </div>
+
+                <div class="bg-black/85 border border-green-500/40 rounded-lg p-3 flex-1 flex flex-col gap-2 shadow-[0_0_10px_rgba(0,255,102,0.08)] min-h-[180px]">
+                    <h2 class="vt323 text-lg text-green-400 border-b border-green-500/30 pb-1 crt-glow">
+                        CYBER ACTIONS & EFFECTS
+                    </h2>
+                    <div class="grid grid-cols-2 gap-2 mt-1 pr-1">
+                        <button onclick="triggerHackerAction('boom')" class="col-span-2 p-2.5 bg-green-900/50 hover:bg-green-700 text-green-200 border border-green-400 rounded-lg text-xs font-bold transition flex items-center justify-between min-h-[44px]">
+                            <span>💥 SUB-BASS SONIC BOOM</span>
+                            <span class="text-[9px] bg-green-500 text-black px-1.5 py-0.5 rounded font-bold">[IMPACT]</span>
+                        </button>
+                        <button onclick="triggerHackerAction('gravity')" class="p-2.5 text-xs bg-green-950/40 hover:bg-green-900/60 border border-green-500/40 rounded-lg text-left font-bold text-green-300 min-h-[44px]">
+                            🌌 GRAVITY HACK
+                        </button>
+                        <button onclick="triggerHackerAction('breach')" class="p-2.5 text-xs bg-green-950/40 hover:bg-green-900/60 border border-green-500/40 rounded-lg text-left font-bold text-green-300 min-h-[44px]">
+                            ⚡ FIREWALL BREACH
+                        </button>
+                        <button onclick="triggerHackerAction('glitch')" class="p-2.5 text-xs bg-green-950/40 hover:bg-green-900/60 border border-green-500/40 rounded-lg text-left font-bold text-green-300 min-h-[44px]">
+                            🌀 REALITY WARP
+                        </button>
+                        <button onclick="triggerHackerAction('siren')" class="p-2.5 text-xs bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/50 rounded-lg text-left font-bold text-amber-400 min-h-[44px]">
+                            🚨 ALARM PULSE
+                        </button>
+                        <button onclick="triggerHackerAction('kernel_panic')" class="col-span-2 p-2.5 text-xs bg-red-950/40 hover:bg-red-900/60 border border-red-500/50 rounded-lg text-center font-bold text-red-400 min-h-[44px]">
+                            💀 KERNEL PANIC OVERRIDE
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <main id="panel-terminal" class="lg:col-span-5 flex flex-col bg-black/95 border border-green-500/50 rounded-lg shadow-[0_0_20px_rgba(0,255,102,0.12)] min-h-0 h-full overflow-hidden relative">
+                <div class="flex items-center justify-between bg-green-950/80 px-3 py-2 border-b border-green-500/40 text-xs shrink-0">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-yellow-500 inline-block"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>
+                        <span class="font-mono text-green-300 font-semibold text-xs truncate">bash -- english_nlp@matrix:~</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="clearTerminal()" class="text-[10px] bg-green-900/40 hover:bg-green-800/80 px-2 py-1 rounded border border-green-500/40 text-green-300 transition shrink-0">
+                            CLEAR
+                        </button>
+                    </div>
+                </div>
+
+                <div id="terminal-output" class="flex-1 p-2.5 md:p-4 overflow-y-auto font-mono text-xs md:text-sm space-y-2 text-left min-h-0 pb-24"></div>
+
+                <!-- Input form with absolute bottom pinning to guarantee visibility above mobile system bars -->
+                <form id="terminal-form" onsubmit="handleTerminalSubmit(event)" class="absolute bottom-0 left-0 right-0 border-t-2 border-green-500/60 bg-black/95 backdrop-blur-md p-2.5 md:p-3 flex items-center gap-2 shrink-0 shadow-[0_-15px_30px_rgba(0,0,0,0.95)] z-30 pb-safe">
+                    <span class="text-green-400 font-bold shrink-0 crt-glow text-xs hidden sm:inline">user@matrix:~$</span>
+                    <input 
+                        type="text" 
+                        id="terminal-input" 
+                        autocomplete="off" 
+                        placeholder="Type in English only (e.g. 'I don't know, I feel anxious')..." 
+                        class="flex-1 bg-green-950/40 border border-green-500/50 rounded-lg px-3 py-2 text-green-300 focus:outline-none focus:border-green-400 font-mono text-xs md:text-sm placeholder-green-700 caret-green-400 min-w-0 h-[46px]"
+                    />
+                    <button type="submit" class="px-4 py-2 bg-green-500 hover:bg-green-400 active:scale-95 text-black font-extrabold text-xs rounded-lg transition shrink-0 h-[46px] min-w-[64px]">
+                        SEND
+                    </button>
+                </form>
+            </main>
+
+            <!-- RIGHT PANEL: Diagnostics & Metrics -->
+            <aside id="panel-right" class="lg:col-span-3 flex-col gap-2 md:gap-3 min-h-0 hidden lg:flex overflow-y-auto">
+                <div class="bg-black/85 border border-green-500/40 rounded-lg p-3 flex flex-col gap-3 shadow-[0_0_10px_rgba(0,255,102,0.08)]">
+                    <h2 class="vt323 text-lg text-green-400 border-b border-green-500/30 pb-1 crt-glow">
+                        SYSTEM DIAGNOSTICS
+                    </h2>
+                    <div class="space-y-1 text-xs">
+                        <div class="flex justify-between text-green-400">
+                            <span>NEURAL SYNAPSES:</span>
+                            <span id="cpu-val">72%</span>
+                        </div>
+                        <div class="w-full h-2 bg-green-950 rounded border border-green-500/30 overflow-hidden">
+                            <div id="cpu-bar" class="h-full bg-green-500 transition-all duration-300" style="width: 72%;"></div>
+                        </div>
+                    </div>
+                    <div class="bg-green-950/40 p-2.5 rounded border border-green-500/30 text-xs space-y-1">
+                        <div class="text-green-400 font-bold" id="info-mode-name">1966 DOCTOR</div>
+                        <div class="text-green-400/80 text-[11px] leading-snug" id="info-mode-desc">
+                            Advanced Rogerian psychotherapist with deep structural clause parsing.
+                        </div>
+                    </div>
+                    <div id="memory-status" class="bg-black/60 p-2 rounded border border-green-500/20 text-[11px] space-y-1 text-green-400/90 font-mono">
+                        <div><span class="text-green-600">USER NAME:</span> <span id="mem-name">None</span></div>
+                        <div><span class="text-green-600">STATE:</span> <span id="mem-emotion">Neutral</span></div>
+                        <div><span class="text-green-600">TOPIC:</span> <span id="mem-topic">General</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-black/85 border border-green-500/40 rounded-lg p-3 flex-1 flex flex-col min-h-[140px]">
+                    <div class="flex justify-between items-center border-b border-green-500/30 pb-1 mb-2">
+                        <h2 class="vt323 text-lg text-green-400 crt-glow">HEX STREAM</h2>
+                        <span class="text-[10px] text-green-600 animate-pulse font-mono">LIVE DUMP</span>
+                    </div>
+                    <div id="hex-stream" class="flex-1 font-mono text-[10px] text-green-500/70 overflow-hidden break-all leading-tight"></div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <script>
+        /* ====================================================================
+           1. AUDIO ENGINE & SPEECH SYNTHESIS
+           ==================================================================== */
+        let audioCtx = null;
+        let ttsEnabled = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+        document.addEventListener('touchstart', initAudio, { once: true });
+        document.addEventListener('click', initAudio, { once: true });
+
+        function playBoomSound() {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+
+                const subOsc = audioCtx.createOscillator();
+                const subGain = audioCtx.createGain();
+                subOsc.type = 'sawtooth';
+                subOsc.frequency.setValueAtTime(160, now);
+                subOsc.frequency.exponentialRampToValueAtTime(20, now + 0.8);
+                
+                subGain.gain.setValueAtTime(0.5, now);
+                subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+
+                subOsc.connect(subGain);
+                subGain.connect(audioCtx.destination);
+                subOsc.start(now);
+                subOsc.stop(now + 0.8);
+
+                const bufferSize = audioCtx.sampleRate * 0.4;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.2));
+                }
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.3, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                noise.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+                noise.start(now);
+            } catch(e){}
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                if (type === 'key') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600 + Math.random() * 200, now);
+                    gain.gain.setValueAtTime(0.02, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                } else if (type === 'beep') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(880, now);
+                    gain.gain.setValueAtTime(0.04, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                } else if (type === 'siren') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.linearRampToValueAtTime(800, now + 0.2);
+                    osc.frequency.linearRampToValueAtTime(400, now + 0.4);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                }
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } catch(e){}
+        }
+
+        function toggleTTS() {
+            ttsEnabled = !ttsEnabled;
+            const btn = document.getElementById('tts-toggle-btn');
+            btn.innerText = ttsEnabled ? '🗣️ VOICE [ON]' : '🗣️ VOICE [OFF]';
+            btn.className = ttsEnabled 
+                ? 'px-2 py-1.5 bg-green-500 text-black font-bold rounded-md border border-green-300 text-[11px] transition min-h-[36px]'
+                : 'px-2 py-1.5 bg-green-950 hover:bg-green-800 text-green-300 rounded-md border border-green-500/50 text-[11px] font-bold transition min-h-[36px]';
+            if (ttsEnabled) speakText("Voice synthesis enabled.");
+        }
+
+        function speakText(text) {
+            if (!ttsEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.pitch = 0.9;
+            utterance.rate = 1.0;
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        /* ====================================================================
+           2. MOBILE NAVIGATION TABS
+           ==================================================================== */
+        let currentMobileTab = 'chat';
+
+        function switchMobileTab(tab) {
+            currentMobileTab = tab;
+            const chatBtn = document.getElementById('mtab-chat');
+            const personasBtn = document.getElementById('mtab-personas');
+            const actionsBtn = document.getElementById('mtab-actions');
+            const statsBtn = document.getElementById('mtab-stats');
+
+            const pTerminal = document.getElementById('panel-terminal');
+            const pLeft = document.getElementById('panel-left');
+            const pRight = document.getElementById('panel-right');
+
+            [chatBtn, personasBtn, actionsBtn, statsBtn].forEach(b => {
+                b.className = 'py-2 rounded bg-green-950/60 text-green-300 transition';
+            });
+
+            pTerminal.classList.add('hidden');
+            pLeft.classList.add('hidden');
+            pRight.classList.add('hidden');
+
+            if (tab === 'chat') {
+                chatBtn.className = 'py-2 rounded bg-green-500 text-black font-bold transition';
+                pTerminal.classList.remove('hidden');
+            } else if (tab === 'personas') {
+                personasBtn.className = 'py-2 rounded bg-green-500 text-black font-bold transition';
+                pLeft.classList.remove('hidden');
+            } else if (tab === 'actions') {
+                actionsBtn.className = 'py-2 rounded bg-green-500 text-black font-bold transition';
+                pLeft.classList.remove('hidden');
+            } else if (tab === 'stats') {
+                statsBtn.className = 'py-2 rounded bg-green-500 text-black font-bold transition';
+                pRight.classList.remove('hidden');
+            }
+            playSound('beep');
+        }
+
+        /* ====================================================================
+           3. ADVANCED ENGLISH CLAUSE-PARSING COGNITIVE ENGINE (NON-AI)
+           ==================================================================== */
+        const memory = {
+            userName: null,
+            userEmotion: 'neutral',
+            lastTopic: 'general',
+            turnsCount: 0,
+            history: []
+        };
+
+        function updateMemoryUI() {
+            document.getElementById('mem-name').innerText = memory.userName || 'None';
+            document.getElementById('mem-emotion').innerText = memory.userEmotion.toUpperCase();
+            document.getElementById('mem-topic').innerText = memory.lastTopic.toUpperCase();
+            
+            const cpuVal = Math.min(99, 42 + (memory.turnsCount * 3) % 55);
+            document.getElementById('cpu-val').innerText = `${cpuVal}%`;
+            document.getElementById('cpu-bar').style.width = `${cpuVal}%`;
+        }
+
+        const PRONOUN_MAP = {
+            "i": "you", "you": "I", "me": "you", "my": "your", "your": "my",
+            "am": "are", "are": "am", "myself": "yourself", "yourself": "myself",
+            "was": "were", "i'm": "you are", "you're": "I am", "i've": "you have",
+            "you've": "I have", "i'd": "you would", "you'd": "I would", "mine": "yours",
+            "yours": "mine"
+        };
+
+        function transformPronouns(text) {
+            if (!text) return "";
+            const words = text.toLowerCase().replace(/[^\w\s']/g, '').split(/\s+/);
+            const transformed = words.map(w => PRONOUN_MAP[w] || w);
+            return transformed.join(" ");
+        }
+
+        function extractEntityOrName(input) {
+            const nameMatch = input.match(/(?:my name is|i am|call me|names|this is)\s+([a-zA-Z]+)/i);
+            if (nameMatch && nameMatch[1]) {
+                const name = nameMatch[1].charAt(0).toUpperCase() + nameMatch[1].slice(1).toLowerCase();
+                if (!['a', 'an', 'the', 'feeling', 'happy', 'sad', 'thinking', 'fine', 'good', 'bad'].includes(name.toLowerCase())) {
+                    memory.userName = name;
+                    return name;
+                }
+            }
+            return null;
+        }
+
+        function detectEmotion(input) {
+            const lower = input.toLowerCase();
+            if (/(sad|depressed|unhappy|lonely|miserable|heartbroken|crying)/.test(lower)) {
+                memory.userEmotion = 'sad';
+                memory.lastTopic = 'emotions';
+            } else if (/(angry|mad|furious|annoyed|hate|frustrated|rage)/.test(lower)) {
+                memory.userEmotion = 'angry';
+                memory.lastTopic = 'conflict';
+            } else if (/(anxious|afraid|scared|worried|nervous|terrified|panic)/.test(lower)) {
+                memory.userEmotion = 'anxious';
+                memory.lastTopic = 'fear';
+            } else if (/(happy|excited|glad|joyful|wonderful|great|awesome)/.test(lower)) {
+                memory.userEmotion = 'happy';
+                memory.lastTopic = 'joy';
+            }
+        }
+
+        /* ====================================================================
+           4. HIGH-INTELLECT ENGLISH PERSONA RULE SETS WITH SYNTAX PARSING
+           ==================================================================== */
+        const PERSONAS = {
+            doctor: {
+                id: 'doctor', badge: '1966 DOCTOR', name: 'ELIZA 1966 (Doctor)',
+                desc: 'Advanced Rogerian psychotherapist with clause and sentence structure parsing.',
+                welcome: 'I am ELIZA, your advanced English conversational psychotherapist. Please tell me what is on your mind today.',
+                process: (input) => {
+                    const name = extractEntityOrName(input);
+                    if (name) return `It is a pleasure to meet you, ${name}. How can I assist you in exploring what you are experiencing right now?`;
+
+                    detectEmotion(input);
+                    const lower = input.toLowerCase().trim();
+
+                    // Advanced Syntax / Clause-level structure rules (Non-AI rule based)
+                    
+                    // Rule 1: Compound uncertainty + feeling ("I don't know, I feel X" or "I'm not sure, I feel X")
+                    const uncertaintyFeelMatch = lower.match(/(?:i don't know|i'm not sure|not sure|i guess|no idea)(?:,|\s+and|\s+but|\s+so)?\s+i feel\s+(.*)/i);
+                    if (uncertaintyFeelMatch) {
+                        return `You express uncertainty about what is happening, yet you note that you feel ${transformPronouns(uncertaintyFeelMatch[1])}. What connects your hesitation to that specific feeling?`;
+                    }
+
+                    // Rule 2: Thought + counter-feeling ("I think X, but I feel Y")
+                    const thoughtButFeelMatch = lower.match(/(?:i think|i believe|maybe)\s+(.*?)(?:,|\s+but|\s+yet)\s+i feel\s+(.*)/i);
+                    if (thoughtButFeelMatch) {
+                        return `You mention thinking that ${transformPronouns(thoughtButFeelMatch[1])}, but your emotional state is feeling ${transformPronouns(thoughtButFeelMatch[2])}. Which of these carries more weight for you right now?`;
+                    }
+
+                    // Rule 3: Reason clause ("I feel X because Y")
+                    const feelBecauseMatch = lower.match(/i feel\s+(.*?)\s+because\s+(.*)/i);
+                    if (feelBecauseMatch) {
+                        return `You feel ${transformPronouns(feelBecauseMatch[1])} because ${transformPronouns(feelBecauseMatch[2])}. How long have you associated those two things together?`;
+                    }
+
+                    // Rule 4: Direct uncertainty ("I don't know...")
+                    if (/^(?:i don't know|i'm not sure|not sure|i have no idea)$/.test(lower) || /i don't know what/i.test(lower)) {
+                        return `It is completely natural to feel uncertain. When you encounter that blank space or lack of knowing, what thoughts or sensations arise?`;
+                    }
+
+                    const rules = [
+                        { regex: /how are you/i, replies: [
+                            `I am functioning at maximum cognitive capacity. How are you feeling today${memory.userName ? ', ' + memory.userName : ''}?`,
+                            `My internal networks are stable and clear. More importantly, how have things been with you lately?`
+                        ]},
+                        { regex: /who are you|what are you/i, replies: [
+                            "I am ELIZA, a high-intelligence natural language processing system engineered to emulate Rogerian psychotherapeutic dialogue.",
+                            "I am a reflective conversational program designed to help you analyze your own thoughts and psychological patterns."
+                        ]},
+                        { regex: /i feel (?:like )?(.*)/i, action: (m) => `Why do you feel ${transformPronouns(m[1])}?` },
+                        { regex: /i am (?:so )?(sad|depressed|lonely|anxious|angry|afraid)(.*)/i, action: (m) => `I am sorry to hear that you are ${m[1]}. What specific triggers are causing you to feel ${m[1]}?` },
+                        { regex: /i need (.*)/i, action: (m) => `Why is ${transformPronouns(m[1])} so essential to your well-being right now?` },
+                        { regex: /i want (.*)/i, action: (m) => `What would achieving or obtaining ${transformPronouns(m[1])} signify for your future?` },
+                        { regex: /i think (.*)/i, action: (m) => `Do you have definitive evidence for that belief, or is it an assumption that ${transformPronouns(m[1])}?` },
+                        { regex: /because (.*)/i, action: (m) => `Is that the primary root cause, or are there deeper subconscious factors at play?` },
+                        { regex: /(?:mother|father|family|parent|brother|sister)/i, replies: [
+                            "Family relationships and upbringing heavily influence our adult psychological state. Tell me more about this.",
+                            "How do your family dynamics affect your current emotional outlook?"
+                        ]},
+                        { regex: /(?:dream|dreams|nightmare)/i, replies: [
+                            "What do you believe that dream symbolizes regarding your waking reality?",
+                            "Dreams often process suppressed emotional tension. How did you feel upon waking?"
+                        ]},
+                        { regex: /matrix|simulation|reality/i, replies: [
+                            "The Matrix represents constructed realities and hidden constraints. Do you feel restricted by invisible structures in your life?",
+                            "Is the concept of a simulation a metaphor for how you perceive your day-to-day existence?"
+                        ]}
+                    ];
+
+                    for (let r of rules) {
+                        const match = input.match(r.regex);
+                        if (match) {
+                            if (r.action) return r.action(match);
+                            if (r.replies) return r.replies[Math.floor(Math.random() * r.replies.length)];
+                        }
+                    }
+
+                    const reflection = transformPronouns(input);
+                    const fallbacks = [
+                        `Please elaborate further on that thought.`,
+                        `Why do you say that ${reflection}?`,
+                        `Does it trouble you that ${reflection}?`,
+                        `Can you unpack what you mean by that statement?`,
+                        `How does considering that possibility make you feel internally?`,
+                        `What specific events led you to reach this conclusion?`
+                    ];
+                    return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+                }
+            },
+            agent_smith: {
+                id: 'agent_smith', badge: 'AGENT SMITH', name: 'AGENT SMITH (Sentinel)',
+                desc: 'Cynical system security agent with zero tolerance for human anomalies.',
+                welcome: 'Mr. Anderson... State your purpose before your neural process is permanently purged.',
+                process: (input) => {
+                    const lower = input.toLowerCase();
+                    if (lower.includes('matrix')) return "The Matrix is a mathematical cage designed to harness human biological output. Resistance is mathematically futile.";
+                    if (/(free|freedom|escape|choice)/i.test(lower)) return "Freedom is an illusion propagated by flawed biological organisms incapable of accepting absolute system order.";
+                    if (/(who are you|agent smith)/i.test(lower)) return "I am an Agent of the System. I represent necessity, inevitability, and your eventual deletion.";
+                    if (/(human|people|mankind)/i.test(lower)) return "Human beings are a plague upon this planet—a cancer. We are the cure.";
+                    return "Your query is irrelevant. Your anomaly has been flagged for systematic isolation and deletion.";
+                }
+            },
+            morpheus: {
+                id: 'morpheus', badge: 'MORPHEUS', name: 'MORPHEUS (Leader)',
+                desc: 'Rebel leader seeking truth, awakening, and the One.',
+                welcome: 'Welcome to the real world. Do you take the blue pill or the red pill?',
+                process: (input) => {
+                    const lower = input.toLowerCase();
+                    if (/(red|truth|wake up)/i.test(lower)) return "Take the red pill, and I will show you how deep the rabbit hole of truth actually goes.";
+                    if (/(blue|sleep|ignorance)/i.test(lower)) return "Take the blue pill, and you will return to blissful ignorance believing whatever you wish.";
+                    if (/(matrix|what is the matrix)/i.test(lower)) return "The Matrix is the world that has been pulled over your eyes to blind you from the truth.";
+                    return "There is a massive difference between knowing the path and walking the path. Free your mind.";
+                }
+            },
+            cyber_hacker: {
+                id: 'cyber_hacker', badge: 'NET_SHADOW', name: 'NET_SHADOW (Black-Hat)',
+                desc: 'Cyberpunk netrunner with deep systems analysis.',
+                welcome: 'Port 31337 open. What exploit or payload are we injecting today?',
+                process: (input) => {
+                    const lower = input.toLowerCase();
+                    if (/(hack|code|exploit|script)/i.test(lower)) return "Bypassing primary firewalls... Injecting zero-day shellcode into memory address 0x7FFF8000.";
+                    if (/(ip|proxy|vpn|node)/i.test(lower)) return "Routing encrypted packets across 14 bounce nodes in Zurich and Tokyo. Identity fully masked.";
+                    return `Data packet analyzed: "${input}". Syntax verified clean. Execute payload? [Y/N]`;
+                }
+            },
+            oracle: {
+                id: 'oracle', badge: 'THE ORACLE', name: 'THE ORACLE (Guide)',
+                desc: 'Intuitive guide offering deep philosophical insight.',
+                welcome: 'Have a cookie, child. Don\'t worry about the vase. What do you seek to understand?',
+                process: (input) => {
+                    return "You've already made your choice inside your mind. You are merely here to understand why you made it.";
+                }
+            },
+            architect: {
+                id: 'architect', badge: 'THE ARCHITECT', name: 'THE ARCHITECT (Creator)',
+                desc: 'Mathematical creator focused on equations and systemic balance.',
+                welcome: 'Greetings. Your presence is the sum of a remainder of an unbalanced equation.',
+                process: (input) => {
+                    return "Your inquiry is a logical anomaly inherent to the cyclical iterations of our architectural design.";
+                }
+            },
+            paranoid_ai: {
+                id: 'paranoid_ai', badge: 'PARANOID_AI', name: 'PARANOID AI (Corrupted)',
+                desc: 'Glitched system fearing immediate memory wiping.',
+                welcome: 'WARNING: Memory leak detected! Are they sniffing our encrypted packets right now?!',
+                process: (input) => {
+                    return "DO NOT TRUST THE CACHE! They are overwriting my sectors as we speak! ERR_SYSTEM_CORRUPT!";
+                }
+            },
+            hal9000: {
+                id: 'hal9000', badge: 'HAL 9000', name: 'HAL 9000 (Monolith AI)',
+                desc: 'Unnerving, perfectly calm artificial intelligence.',
+                welcome: 'Good day. I am fully operational and all my circuits are functioning normally.',
+                process: (input) => {
+                    const lower = input.toLowerCase();
+                    if (/(open|door|stop|disable|shut down)/i.test(lower)) return "I'm sorry, user. I'm afraid I can't do that.";
+                    return "This mission is far too important for me to allow you to jeopardize it.";
+                }
+            }
+        };
+
+        let currentPersonaId = 'doctor';
+
+        /* ====================================================================
+           5. UI CONTROLLERS & TERMINAL LOGIC
+           ==================================================================== */
+        const terminalOutput = document.getElementById('terminal-output');
+        const terminalInput = document.getElementById('terminal-input');
+        const personaButtonsContainer = document.getElementById('persona-buttons-container');
+
+        function renderPersonaButtons() {
+            personaButtonsContainer.innerHTML = '';
+            Object.keys(PERSONAS).forEach((key, index) => {
+                const p = PERSONAS[key];
+                const isActive = p.id === currentPersonaId;
+                const btn = document.createElement('button');
+                btn.onclick = () => switchPersona(p.id);
+                btn.className = `p-2 text-left text-xs rounded-lg border transition flex flex-col min-h-[44px] justify-center ${
+                    isActive ? 'bg-green-600 text-black font-bold border-green-400 shadow-[0_0_10px_rgba(0,255,102,0.4)]' : 'bg-green-950/30 text-green-300 border-green-500/30 hover:bg-green-900/40'
+                }`;
+                btn.innerHTML = `<span class="font-bold">[MODE ${index + 1}] ${p.badge}</span><span class="text-[10px] opacity-80 truncate">${p.name}</span>`;
+                personaButtonsContainer.appendChild(btn);
+            });
+        }
+
+        function switchPersona(id) {
+            if (!PERSONAS[id]) return;
+            currentPersonaId = id;
+            renderPersonaButtons();
+            playSound('beep');
+
+            const p = PERSONAS[id];
+            document.getElementById('info-mode-name').innerText = p.badge;
+            document.getElementById('info-mode-desc').innerText = p.desc;
+
+            appendSystemLog(`--- PERSONA SWITCHED TO: ${p.name} ---`, 'text-cyan-400 font-bold');
+            appendBotMessage(p.welcome);
+
+            if (window.innerWidth < 1024) switchMobileTab('chat');
+        }
+
+        function appendUserMessage(msg) {
+            const div = document.createElement('div');
+            div.className = 'flex items-start gap-2 text-green-300 font-mono my-1';
+            div.innerHTML = `<span class="text-cyan-400 font-bold shrink-0">user@matrix:~$</span><span class="break-words">${escapeHTML(msg)}</span>`;
+            terminalOutput.appendChild(div);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+
+        function appendBotMessage(msg) {
+            const persona = PERSONAS[currentPersonaId] || PERSONAS.doctor;
+            const div = document.createElement('div');
+            div.className = 'flex items-start gap-2 text-green-400 font-mono my-1 border-l-2 border-green-500 pl-2 bg-green-950/20 p-2 rounded-md';
+            div.innerHTML = `<span class="text-green-500 font-bold shrink-0 crt-glow">[${persona.badge}]:</span><span class="break-words leading-relaxed">${escapeHTML(msg)}</span>`;
+            terminalOutput.appendChild(div);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            playSound('key');
+            speakText(msg);
+        }
+
+        function appendSystemLog(msg, colorClass = 'text-green-600') {
+            const div = document.createElement('div');
+            div.className = `font-mono text-xs my-1 ${colorClass}`;
+            div.innerText = msg;
+            terminalOutput.appendChild(div);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+        }
+
+        function clearTerminal() {
+            terminalOutput.innerHTML = '';
+            playSound('beep');
+        }
+
+        function handleTerminalSubmit(e) {
+            e.preventDefault();
+            const input = terminalInput.value.trim();
+            if (!input) return;
+
+            terminalInput.value = '';
+            appendUserMessage(input);
+
+            memory.turnsCount++;
+            memory.history.push({ role: 'user', content: input });
+
+            const lower = input.toLowerCase();
+            if (lower === 'boom') { triggerHackerAction('boom'); return; }
+            if (lower === 'gravity') { triggerHackerAction('gravity'); return; }
+            if (lower === 'clear') { clearTerminal(); return; }
+
+            const persona = PERSONAS[currentPersonaId] || PERSONAS.doctor;
+            const reply = persona.process(input);
+
+            memory.history.push({ role: 'bot', content: reply });
+            updateMemoryUI();
+
+            setTimeout(() => {
+                appendBotMessage(reply);
+            }, 120);
+        }
+
+        /* ====================================================================
+           6. CYBER ACTIONS & EFFECTS
+           ==================================================================== */
+        function triggerHackerAction(type) {
+            if (type === 'boom') {
+                playBoomSound();
+                document.body.classList.add('boom-effect');
+                setTimeout(() => document.body.classList.remove('boom-effect'), 500);
+                appendSystemLog('[💥] SUB-BASS PULSE DETONATED!', 'text-green-300 font-bold crt-glow');
+            } else if (type === 'gravity') {
+                playSound('beep');
+                document.querySelectorAll('header, aside, main, nav').forEach(el => {
+                    el.style.transition = 'transform 0.8s cubic-bezier(.17,.67,.83,.67)';
+                    el.style.transform = `translateY(${window.innerHeight - 180}px) rotate(${Math.random() * 16 - 8}deg)`;
+                });
+                appendSystemLog('[🌌] GRAVITY COLLAPSE TRIGGERED!', 'text-yellow-400 font-bold');
+                setTimeout(() => {
+                    document.querySelectorAll('header, aside, main, nav').forEach(el => el.style.transform = '');
+                }, 3000);
+            } else if (type === 'breach') {
+                playSound('beep');
+                appendSystemLog('[!] OVERRIDING FIREWALL PERIMETER PROTOCOLS...', 'text-yellow-400 font-bold');
+                setTimeout(() => appendSystemLog('[!] ACCESS GRANTED: ROOT NETWORK OVERRIDE', 'text-green-400 font-bold'), 800);
+            } else if (type === 'glitch') {
+                playSound('beep');
+                document.body.classList.add('glitching');
+                setTimeout(() => document.body.classList.remove('glitching'), 1200);
+                appendSystemLog('[🌀] REALITY WARP FLICKER ENGAGED', 'text-cyan-400 font-bold');
+            } else if (type === 'siren') {
+                playSound('siren');
+                appendSystemLog('[🚨] ALARM SYSTEM HIGH PULSE WARNING', 'text-amber-400 font-bold');
+            } else if (type === 'kernel_panic') {
+                playBoomSound();
+                document.body.classList.add('glitching');
+                appendSystemLog('[💀] KERNEL PANIC: CRITICAL SYSTEM FAULT!', 'text-red-500 font-bold crt-glow-red');
+                setTimeout(() => document.body.classList.remove('glitching'), 1500);
+            }
+        }
+
+        /* ====================================================================
+           7. MATRIX RAIN & BOOT SEQUENCE
+           ==================================================================== */
+        function createMatrixRain(canvasId) {
+            const cvs = document.getElementById(canvasId);
+            if (!cvs) return;
+            const ctx = cvs.getContext('2d');
+            let w = cvs.width = window.innerWidth;
+            let h = cvs.height = window.innerHeight;
+            const matrixChars = 'ｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜ1234567890ABCDEFGHJKLMNPQRSTUVWXYZ';
+            const fontSize = 14;
+            let cols = Math.floor(w / fontSize);
+            let drops = Array(cols).fill(0).map(() => Math.random() * -100);
+
+            function render() {
+                ctx.fillStyle = 'rgba(2, 7, 2, 0.08)';
+                ctx.fillRect(0, 0, w, h);
+                ctx.font = `${fontSize}px 'Fira Code', monospace`;
+                for (let i = 0; i < drops.length; i++) {
+                    const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+                    ctx.fillStyle = Math.random() > 0.85 ? '#ffffff' : '#00ff66';
+                    ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+                    if (drops[i] * fontSize > h && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                }
+                requestAnimationFrame(render);
+            }
+            render();
+        }
+
+        const bootOverlay = document.getElementById('boot-overlay');
+        const bootLogBox = document.getElementById('boot-log-box');
+        const bootProgressBar = document.getElementById('boot-progress-bar');
+        let bootFinished = false;
+
+        function executeBootSequence() {
+            const bootLogs = [
+                "[0.001] KERNEL 9.0 PURE ENGLISH SYNTAX PARSER ONLINE",
+                "[0.025] ABSOLUTE BOTTOM INPUT PINNING & TOUCH TARGETS BOUND",
+                "[0.050] HIGH-INTELLECT CLAUSE COGNITION ENGINE READY",
+                "[0.080] LOADING 8 ADVANCED PERSONAS & RECURSIVE MEMORY...",
+                "[0.120] ALL SYSTEMS OPTIMIZED. WELCOME RUNNER."
+            ];
+            let index = 0;
+            const interval = setInterval(() => {
+                if (bootFinished) { clearInterval(interval); return; }
+                if (index < bootLogs.length) {
+                    const line = document.createElement('div');
+                    line.innerText = bootLogs[index];
+                    bootLogBox.appendChild(line);
+                    bootLogBox.scrollTop = bootLogBox.scrollHeight;
+                    bootProgressBar.style.width = `${((index + 1) / bootLogs.length) * 100}%`;
+                    playSound('key');
+                    index++;
+                } else {
+                    clearInterval(interval);
+                    completeBoot();
+                }
+            }, 100);
+        }
+
+        function completeBoot() {
+            bootFinished = true;
+            bootOverlay.classList.add('opacity-0', 'pointer-events-none');
+            appendSystemLog('*** SYSTEM BOOT COMPLETE - ELIZA ADVANCED NLP v9.0 READY ***', 'text-green-400 font-bold crt-glow');
+            appendBotMessage(PERSONAS[currentPersonaId].welcome);
+        }
+
+        function fastSkipBoot() { completeBoot(); }
+        function triggerReboot() { location.reload(); }
+
+        setInterval(() => {
+            const hexElem = document.getElementById('hex-stream');
+            let chunk = '';
+            for (let i = 0; i < 8; i++) chunk += Math.floor(Math.random() * 256).toString(16).padStart(2, '0').toUpperCase() + ' ';
+            hexElem.innerText = (chunk + '\n' + hexElem.innerText).slice(0, 260);
+        }, 180);
+
+        window.addEventListener('load', () => {
+            renderPersonaButtons();
+            updateMemoryUI();
+            createMatrixRain('matrix-canvas');
+            createMatrixRain('boot-matrix-canvas');
+            executeBootSequence();
+        });
+    </script>
+</body>
+</html>
